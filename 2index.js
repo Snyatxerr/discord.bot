@@ -1,15 +1,12 @@
-const token = process.env['token'];
+
 const http = require('http');
 http.createServer(function(request, response)
 {response.writeHead(200, {'Content-Type': 'text/plain'});
 	response.end('Bot is online!');
 }).listen(3000);
-const { Client, GatewayIntentBits,Routes, InteractionResponse, CommandInteraction, MessageReaction } = require('discord.js');
-const { REST } = require('@discordjs/rest');
+const { Client, GatewayIntentBits,Routes, InteractionResponse,ReplyOptions,CommandInteraction, MessageReaction } = require('discord.js');
 const cron = require('node-cron');
-const rest = new REST({version:'10'}).setToken(process.env.token);
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent ,
-GatewayIntentBits.GuildBans, GatewayIntentBits.DirectMessageReactions, GatewayIntentBits.DirectMessageTyping, GatewayIntentBits.DirectMessages,
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent , GatewayIntentBits.DirectMessageReactions, GatewayIntentBits.DirectMessageTyping, GatewayIntentBits.DirectMessages,
  GatewayIntentBits.GuildEmojisAndStickers, GatewayIntentBits.GuildIntegrations, GatewayIntentBits.GuildInvites, GatewayIntentBits.GuildMessageReactions,GatewayIntentBits.GuildMessageTyping, GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildScheduledEvents, GatewayIntentBits.GuildVoiceStates, 
   GatewayIntentBits.GuildWebhooks
  ] });
@@ -24,19 +21,10 @@ client.on("ready",async()=>{
     channel.send("にゃ");
   })
 });
-let limitrand;
-client.on("messageCreate",(message)=>{
-  if(message.author.bot) return;
-  limitrand = Math.round(Math.random()*15)+1;
-  if(limitrand==1){
-    message.reply("ぅゅ");
-  }
-    else return;
-});
 client.on("channelPinsUpdate",(channel,date)=>{
 channel.send("うにゃああああああ！");
 });
-let cut;
+let cut,id;
 let sentence="";
 let letter = "";
 client.on("messageCreate",(message)=>{
@@ -51,12 +39,21 @@ client.on("messageCreate",(message)=>{
       sentence=letter.replace(/\s+/g,'');
     }
       if(sentence==""){
-        message.reply("@"+message.author.id);
-      }else{
+        message.reply(message.author.id);
+      }else if(message.type==0){
     message.delete(1);
     message.channel.send(sentence);
     letter="";
     sentence="";
+      }else if(message.type==19){
+        message.delete(1);
+          
+          message.channel.cache.message.reference.messageId.reply(sentence);
+        letter="";
+        sentence="";
+      }
+    else {return;
       }
   }
 });
+          
