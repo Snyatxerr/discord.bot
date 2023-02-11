@@ -1,90 +1,71 @@
-const { Client, GatewayIntentBits, Routes, SlashCommandBuilder, InteractionResponse, CommandInteraction, MessageReaction } = require('discord.js');
-const config = require('./config.json');
-const { REST } = require('@discordjs/rest');
-const { get } = require('mongoose');
-
-const rest = new REST({version:'10'}).setToken(config.token);
-
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent ,
-GatewayIntentBits.GuildBans, GatewayIntentBits.DirectMessageReactions, GatewayIntentBits.DirectMessageTyping, GatewayIntentBits.DirectMessages,
- GatewayIntentBits.GuildEmojisAndStickers, GatewayIntentBits.GuildIntegrations, GatewayIntentBits.GuildInvites, GatewayIntentBits.GuildMessageReactions,
-  GatewayIntentBits.GuildMessageTyping, GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildScheduledEvents, GatewayIntentBits.GuildVoiceStates, 
+const http = require('http');
+http.createServer(function(request, response)
+{response.writeHead(200, {'Content-Type': 'text/plain'});
+	response.end('Bot is online!');
+}).listen(3000);
+talk = require("./send.js");
+response = require("./response.js");
+const { Client, GatewayIntentBits,Routes,EmbedBuilder,MessageReaction,REST} = require('discord.js');
+const rest = new REST({ version: '10' }).setToken(process.env.token);
+const cron = require('node-cron');
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent , GatewayIntentBits.DirectMessageReactions, GatewayIntentBits.DirectMessageTyping, GatewayIntentBits.DirectMessages,
+ GatewayIntentBits.GuildEmojisAndStickers, GatewayIntentBits.GuildIntegrations, GatewayIntentBits.GuildInvites, GatewayIntentBits.GuildMessageReactions,GatewayIntentBits.GuildMessageTyping, GatewayIntentBits.GuildPresences, GatewayIntentBits.GuildScheduledEvents, GatewayIntentBits.GuildVoiceStates, 
   GatewayIntentBits.GuildWebhooks
  ] });
-
-client.login(config.token);//C:\Users\user\Desktop\bot
+client.login(process.env.token);
+const { EnkaClient } = require("enka-network-api");
+const enka = new EnkaClient({ showFetchCacheLog:true ,defaultLanguage:'jp'}); 
 client.once("ready", () => {
-	console.log('Ready!'); // 起動した時に"Ready!"とコンソールに出力する
+	console.log('Ready!'); 
 });
-
-client.on("messageCreate", (message) =>{ 
-    if(message.author.bot) return;
-    console.log(message.createdAt.toLocaleString(),"サーバー名"+ message.guild.name , 'ユーザー名'+ message.author.tag  , message.content);
-    if (message.content.includes(config.pochi))
-    if(!message.content.includes(config.me)){
-        console.log("削除されたメッセージ"+message.content);
-        message.delete(2000);
-    }
-        if(message.content.includes(config.me)) {
-            let random = Math.floor(Math.random()*1000);
-            if(random <= 600)  
-            message.channel.send(config.me1);//60%
-            else if (random <= 994)   
-            message.channel.send(config.me2);//39.4%
-            else 
-            message.channel.send(config.unusualstring);
-        }
+client.on("ready",async()=>{
+  const channel = await client.channels.fetch("1022696342000250923");
+  cron.schedule('0 * * * *',()=>{
+    channel.send("にゃ");
+  })
 });
-
-client.on("interactionCreate",(interaction) => {//スラッシュコマンドに
-    if(interaction.isChatInputCommand()) {
-        console.log('コマンド名'+interaction.commandName,'ユーザー名'+interaction.user.tag);
-        if(interaction.commandName === 'ping'){
-        let ping =Date.now() - interaction.createdTimestamp;
-        console.log(ping);
-        interaction.reply(String(ping)+'msです');
-        }
-        /*if(interaction.commandName === "checkstart"){
-        if(client.message.content.includes(config.me1))
-        client.delete(2000);}*/
-        }
-});
-
-async function main() {
-    const commands = [{
-        name :'checkstart' ,
-        description:'react to several words',
-    } , {
-        name : 'ping',
-        description:'pong!',
-    },  
+talk(client);
+response(client);
+let pictures="";
+client.on("ready", async () => {
+  const data = [
+    {   name: "status",
+        description: "キャラのステータスを取得します",
+        
+        options: [
+            {
+                type:3,
+                name: "uid",
+                description: "キャラのステータスを取得します",
+           required: true,
+              min_length:9,
+              max_length:9
+            }]
+    },
 ];
-    try {
-        console.log('application command start ');
-        Routes.applicationGuildCommands;
-        await rest.put(Routes.applicationGuildCommands(config.clientId,config.guildId),{
-            body : commands,
-     });
-    } catch (err) {
-        console.log(err)
-    }
-};
-
-main(); //関わる部分
-
-client.on("guildMemberAdd", member => {
-    console.log("サーバー名" +member.guild.name , `${member.user.tag}   came` ,   member.guild.id );//参加したユーザーの情報を出す
+await client.application.commands.set(data,"1022696341530492999");
 });
-client.on("guildMemberRemove",member => {
-    console.log( member.guild.name , `${member.user.username}   left` ,   member.guild.id );//退会したユーザーの情報を出す
-});
-
-client.on("channelPinsUpdate", (channel,date) => {//ピン止めしたメッセージ自体は表示されない
-    console.log("ピン止めに変更");
-});
-
-client.on("messageReactionAdd",(reaction,user) => {
-    if(reaction.message.author =='true')
-    console.log(user.username+'のリアクションを削除');
-    reaction.remove(2000);//課題　コンソールログが表示されない
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isCommand()) {
+      return;
+  }
+  if (interaction.commandName === "status") {
+  const uid = interaction.options._hoistedOptions[0].value;
+    console.log(uid);
+    interaction.deferReply
+await enka.fetchUser(uid).then(user =>{
+  if(user.profilePictureCharacter.costumes[0].isDefault){pictures=user.profilePictureCharacter.splashImage.url;
+}else{
+pictures=user.profilePictureCharacter.costumes[0].splashImage.url;
+}
+const embed = new EmbedBuilder()
+.setTitle(user.profilePictureCharacter._nameId)
+.setURL(("https://enka.network/u/"+uid+"/"))
+.setImage(pictures)
+.addFields({name:user.nickname,value:"世界ランク"+user._data.playerInfo.worldLevel+"螺旋"+user._data.playerInfo.towerFloorIndex+"-"+user._data.playerInfo.towerLevelIndex})
+.addFields({name:"ステータスメッセージ",value:user.signature,inline:true})
+  interaction.reply({embeds:[embed]});
+  pictures="";
+})
+}
 });
